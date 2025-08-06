@@ -1,1 +1,0 @@
-v1.0.0 - Initial modular script hub release
