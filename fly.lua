@@ -33,66 +33,62 @@ bodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
 bodyVelocity.Parent = hrp
 _G.FlyBodyVelocity = bodyVelocity
 
--- Movement input
+-- Input storage
 local moveDirection = Vector3.zero
 local flyingSpeed = 60
 
--- Mobile joystick compatibility (touch input)
-local function updateMoveDirection()
-    if UIS.TouchEnabled then
-        moveDirection = player:GetMoveDirection()
-    end
-end
-
--- Desktop input handling
+-- Desktop key input
 local keys = {
     W = false,
     A = false,
     S = false,
     D = false,
-    Q = false, -- down
-    E = false  -- up
+    Q = false,
+    E = false
 }
 
-UIS.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    local key = input.KeyCode.Name
-    if keys[key] ~= nil then keys[key] = true end
+UIS.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    local name = input.KeyCode.Name
+    if keys[name] ~= nil then
+        keys[name] = true
+    end
 end)
 
 UIS.InputEnded:Connect(function(input)
-    local key = input.KeyCode.Name
-    if keys[key] ~= nil then keys[key] = false end
+    local name = input.KeyCode.Name
+    if keys[name] ~= nil then
+        keys[name] = false
+    end
 end)
 
 -- Fly loop
 _G.FlyConnection = RunService.RenderStepped:Connect(function()
     if not _G.Flying then return end
-    updateMoveDirection()
 
     local rootCF = hrp.CFrame
     local forward = rootCF.LookVector
     local right = rootCF.RightVector
-    local up = rootCF.UpVector
+    local up = Vector3.new(0, 1, 0)
     local moveVec = Vector3.zero
 
-    -- Desktop movement vector
-    if not UIS.TouchEnabled then
+    -- Use touch movement if on mobile
+    if UIS.TouchEnabled then
+        moveVec = humanoid.MoveDirection
+    else
         if keys.W then moveVec += forward end
         if keys.S then moveVec -= forward end
         if keys.A then moveVec -= right end
         if keys.D then moveVec += right end
         if keys.E then moveVec += up end
         if keys.Q then moveVec -= up end
-    else
-        -- Mobile uses humanoid movement input
-        moveVec = moveDirection
     end
 
-    bodyVelocity.Velocity = moveVec.Unit * flyingSpeed
-    if moveVec.Magnitude == 0 then
+    if moveVec.Magnitude > 0 then
+        bodyVelocity.Velocity = moveVec.Unit * flyingSpeed
+    else
         bodyVelocity.Velocity = Vector3.zero
     end
 
-    bodyGyro.CFrame = hrp.CFrame
+    bodyGyro.CFrame = rootCF
 end)
