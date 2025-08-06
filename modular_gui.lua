@@ -23,6 +23,7 @@ end
 -- Create GUI
 local ScreenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
 ScreenGui.Name = "ModularGUI"
+ScreenGui.ResetOnSpawn = false
 
 local Frame = Instance.new("Frame", ScreenGui)
 Frame.Size = UDim2.new(0, 400, 0, 300)
@@ -54,22 +55,34 @@ Layout.SortOrder = Enum.SortOrder.LayoutOrder
 
 -- Modules
 local Modules = {
-    {name = "🔍 Enable ESP", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/esp.lua"},
-    {name = "🚀 Enable Fly", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/fly.lua"},
-    {name = "🕳️ Enable Noclip", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/noclip.lua"},
+    {name = "🔍 Toggle ESP", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/esp.lua"},
+    {name = "🚀 Toggle Fly", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/fly.lua"},
+    {name = "🕳️ Toggle Noclip", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/noclip.lua"},
     {name = "🔄 Rejoin", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/rejoin.lua"},
     {name = "🚪 Server Hop", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/serverhop.lua"},
     {name = "💤 Anti-AFK", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/antiafk.lua"},
 }
 
+local activeModules = {}
+
 -- Create buttons
 for _, mod in ipairs(Modules) do
     createButton(ButtonContainer, mod.name, function()
-        local s, err = pcall(function()
-            loadstring(game:HttpGet(mod.url))()
-        end)
-        if not s then
-            warn("Error loading " .. mod.name .. ": " .. tostring(err))
+        if not activeModules[mod.name] then
+            local success, moduleOrError = pcall(function()
+                return loadstring(game:HttpGet(mod.url))()
+            end)
+            if success and typeof(moduleOrError) == "table" and moduleOrError.Enable then
+                moduleOrError.Enable()
+                activeModules[mod.name] = moduleOrError
+            elseif not success then
+                warn("Failed to load " .. mod.name .. ": " .. tostring(moduleOrError))
+            end
+        else
+            if activeModules[mod.name].Disable then
+                activeModules[mod.name].Disable()
+                activeModules[mod.name] = nil
+            end
         end
     end)
 end
