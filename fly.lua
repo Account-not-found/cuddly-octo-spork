@@ -1,71 +1,98 @@
 -- fly.lua
-if _G.FlyEnabled then
-    _G.FlyEnabled = false
+if _G.Flying then
+    _G.Flying = false
+    if _G.FlyConnection then _G.FlyConnection:Disconnect() end
+    if _G.FlyBodyGyro then _G.FlyBodyGyro:Destroy() end
     if _G.FlyBodyVelocity then _G.FlyBodyVelocity:Destroy() end
-    if _G.FlyGyro then _G.FlyGyro:Destroy() end
+    game.Players.LocalPlayer.Character.Humanoid.PlatformStand = false
     return
 end
 
-_G.FlyEnabled = true
+_G.Flying = true
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
+local UIS = game:GetService("UserInputService")
 local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+local humanoid = char:WaitForChild("Humanoid")
 
--- Create BodyVelocity
-local bv = Instance.new("BodyVelocity")
-bv.Name = "FlyBodyVelocity"
-bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-bv.Velocity = Vector3.zero
-bv.Parent = hrp
-_G.FlyBodyVelocity = bv
+humanoid.PlatformStand = true
 
--- Create BodyGyro
-local gyro = Instance.new("BodyGyro")
-gyro.Name = "FlyGyro"
-gyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
-gyro.CFrame = hrp.CFrame
-gyro.P = 9e4
-gyro.Parent = hrp
-_G.FlyGyro = gyro
+local bodyGyro = Instance.new("BodyGyro")
+bodyGyro.P = 9e4
+bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+bodyGyro.CFrame = hrp.CFrame
+bodyGyro.Parent = hrp
+_G.FlyBodyGyro = bodyGyro
 
--- Vertical movement
-local vertical = 0
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.E then
-        vertical = 1
-    elseif input.KeyCode == Enum.KeyCode.Q then
-        vertical = -1
+local bodyVelocity = Instance.new("BodyVelocity")
+bodyVelocity.Velocity = Vector3.zero
+bodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+bodyVelocity.Parent = hrp
+_G.FlyBodyVelocity = bodyVelocity
+
+-- Movement input
+local moveDirection = Vector3.zero
+local flyingSpeed = 60
+
+-- Mobile joystick compatibility (touch input)
+local function updateMoveDirection()
+    if UIS.TouchEnabled then
+        moveDirection = player:GetMoveDirection()
     end
+end
+
+-- Desktop input handling
+local keys = {
+    W = false,
+    A = false,
+    S = false,
+    D = false,
+    Q = false, -- down
+    E = false  -- up
+}
+
+UIS.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    local key = input.KeyCode.Name
+    if keys[key] ~= nil then keys[key] = true end
 end)
 
-UserInputService.InputEnded:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.E or input.KeyCode == Enum.KeyCode.Q then
-        vertical = 0
-    end
+UIS.InputEnded:Connect(function(input)
+    local key = input.KeyCode.Name
+    if keys[key] ~= nil then keys[key] = false end
 end)
 
--- Main fly loop
-RunService.RenderStepped:Connect(function()
-    if not _G.FlyEnabled then return end
+-- Fly loop
+_G.FlyConnection = RunService.RenderStepped:Connect(function()
+    if not _G.Flying then return end
+    updateMoveDirection()
 
+    local rootCF = hrp.CFrame
+    local forward = rootCF.LookVector
+    local right = rootCF.RightVector
+    local up = rootCF.UpVector
     local moveVec = Vector3.zero
-    pcall(function()
-        moveVec = require(player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule")):GetControls():GetMoveVector()
-    end)
 
-    local cam = workspace.CurrentCamera
-    local camCF = cam.CFrame
-
-    local direction = (camCF.LookVector * moveVec.Z + camCF.RightVector * moveVec.X + Vector3.new(0, vertical, 0))
-    if direction.Magnitude > 0 then
-        bv.Velocity = direction.Unit * 50
+    -- Desktop movement vector
+    if not UIS.TouchEnabled then
+        if keys.W then moveVec += forward end
+        if keys.S then moveVec -= forward end
+        if keys.A then moveVec -= right end
+        if keys.D then moveVec += right end
+        if keys.E then moveVec += up end
+        if keys.Q then moveVec -= up end
     else
-        bv.Velocity = Vector3.zero
+        -- Mobile uses humanoid movement input
+        moveVec = moveDirection
     end
 
-    gyro.CFrame = camCF
+    bodyVelocity.Velocity = moveVec.Unit * flyingSpeed
+    if moveVec.Magnitude == 0 then
+        bodyVelocity.Velocity = Vector3.zero
+    end
+
+    bodyGyro.CFrame = hrp.CFrame
 end)
