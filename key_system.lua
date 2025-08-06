@@ -61,16 +61,21 @@ Submit.MouseButton1Click:Connect(function()
         return game:HttpGet("https://pastebin.com/raw/fQrQSBH2")
     end)
 
-    if success then
-        local validKeys = string.split(response, "\\n")
-        for _, key in pairs(validKeys) do
-            if userKey == key then
-                ScreenGui:Destroy()
-                loadstring(game:HttpGet("https://https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/ui/modular_gui.lua"))()
-                return
+    if success and response then
+        local verified = false
+        for key in response:gmatch("[^\r\n]+") do
+            if userKey:lower():gsub("%s+", "") == key:lower():gsub("%s+", "") then
+                verified = true
+                break
             end
         end
-        TextBox.Text = "❌ Invalid key!"
+
+        if verified then
+            ScreenGui:Destroy()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/ui/modular_gui.lua"))()
+        else
+            TextBox.Text = "❌ Invalid key!"
+        end
     else
         TextBox.Text = "⚠️ Could not fetch keys!"
     end
