@@ -1,7 +1,7 @@
--- fly.lua
 local Players = game:GetService("Players")
-local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local ContextActionService = game:GetService("ContextActionService")
 
 -- fly.lua
 if _G.FlyEnabled then
@@ -12,11 +12,6 @@ if _G.FlyEnabled then
 end
 
 _G.FlyEnabled = true
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local ContextActionService = game:GetService("ContextActionService")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
