@@ -10,6 +10,7 @@ _G.FlyEnabled = true
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local hrp = character:WaitForChild("HumanoidRootPart")
@@ -27,32 +28,44 @@ local gyro = Instance.new("BodyGyro")
 gyro.Name = "FlyGyro"
 gyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
 gyro.CFrame = hrp.CFrame
+gyro.P = 9e4
 gyro.Parent = hrp
 _G.FlyGyro = gyro
 
--- Flying speed
-local speed = 50
+-- Vertical movement
+local vertical = 0
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.E then
+        vertical = 1
+    elseif input.KeyCode == Enum.KeyCode.Q then
+        vertical = -1
+    end
+end)
 
--- Movement input (mobile-compatible)
+UserInputService.InputEnded:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.E or input.KeyCode == Enum.KeyCode.Q then
+        vertical = 0
+    end
+end)
+
+-- Main fly loop
 RunService.RenderStepped:Connect(function()
     if not _G.FlyEnabled then return end
 
-    local moveVector = Vector3.zero
+    local moveVec = Vector3.zero
     pcall(function()
-        moveVector = require(player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule")):GetControls():GetMoveVector()
+        moveVec = require(player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule")):GetControls():GetMoveVector()
     end)
 
-    -- Re-map move direction properly
-    if moveVector.Magnitude > 0 then
-        local cf = hrp.CFrame
-        local forward = cf.LookVector
-        local right = cf.RightVector
-        local direction = (forward * moveVector.Z + right * moveVector.X)
+    local cam = workspace.CurrentCamera
+    local camCF = cam.CFrame
 
-        bv.Velocity = direction.Unit * speed
+    local direction = (camCF.LookVector * moveVec.Z + camCF.RightVector * moveVec.X + Vector3.new(0, vertical, 0))
+    if direction.Magnitude > 0 then
+        bv.Velocity = direction.Unit * 50
     else
         bv.Velocity = Vector3.zero
     end
 
-    gyro.CFrame = hrp.CFrame
+    gyro.CFrame = camCF
 end)
