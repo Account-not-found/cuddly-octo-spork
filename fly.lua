@@ -2,6 +2,8 @@
 if _G.Flying then
     _G.Flying = false
     if _G.FlyConnection then _G.FlyConnection:Disconnect() end
+    if _G.FlyInputBegan then _G.FlyInputBegan:Disconnect() end
+    if _G.FlyInputEnded then _G.FlyInputEnded:Disconnect() end
     if _G.FlyBodyGyro then _G.FlyBodyGyro:Destroy() end
     if _G.FlyBodyVelocity then _G.FlyBodyVelocity:Destroy() end
     game.Players.LocalPlayer.Character.Humanoid.PlatformStand = false
@@ -17,6 +19,7 @@ local player = Players.LocalPlayer
 local char = player.Character or player.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
 local humanoid = char:WaitForChild("Humanoid")
+local cam = workspace.CurrentCamera
 
 humanoid.PlatformStand = true
 
@@ -37,7 +40,6 @@ _G.FlyBodyVelocity = bodyVelocity
 local moveDirection = Vector3.zero
 local flyingSpeed = 60
 
--- Desktop key input
 local keys = {
     W = false,
     A = false,
@@ -47,7 +49,7 @@ local keys = {
     E = false
 }
 
-UIS.InputBegan:Connect(function(input, gp)
+_G.FlyInputBegan = UIS.InputBegan:Connect(function(input, gp)
     if gp then return end
     local name = input.KeyCode.Name
     if keys[name] ~= nil then
@@ -55,24 +57,22 @@ UIS.InputBegan:Connect(function(input, gp)
     end
 end)
 
-UIS.InputEnded:Connect(function(input)
+_G.FlyInputEnded = UIS.InputEnded:Connect(function(input)
     local name = input.KeyCode.Name
     if keys[name] ~= nil then
         keys[name] = false
     end
 end)
 
--- Fly loop
 _G.FlyConnection = RunService.RenderStepped:Connect(function()
     if not _G.Flying then return end
 
     local rootCF = hrp.CFrame
-    local forward = rootCF.LookVector
-    local right = rootCF.RightVector
+    local forward = cam.CFrame.LookVector
+    local right = cam.CFrame.RightVector
     local up = Vector3.new(0, 1, 0)
     local moveVec = Vector3.zero
 
-    -- Use touch movement if on mobile
     if UIS.TouchEnabled then
         moveVec = humanoid.MoveDirection
     else
