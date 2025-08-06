@@ -66,7 +66,7 @@ Submit.MouseButton1Click:Connect(function()
         for _, key in pairs(validKeys) do
             if userKey == key then
                 ScreenGui:Destroy()
-                loadstring(game:HttpGet("https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/main/ui/modular_gui.lua"))()
+                loadstring(game:HttpGet("https://https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/ui/modular_gui.lua"))()
                 return
             end
         end
