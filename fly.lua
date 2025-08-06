@@ -14,7 +14,7 @@ local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local hrp = character:WaitForChild("HumanoidRootPart")
 
--- BodyVelocity for movement
+-- Create BodyVelocity
 local bv = Instance.new("BodyVelocity")
 bv.Name = "FlyBodyVelocity"
 bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
@@ -22,7 +22,7 @@ bv.Velocity = Vector3.zero
 bv.Parent = hrp
 _G.FlyBodyVelocity = bv
 
--- BodyGyro for facing
+-- Create BodyGyro
 local gyro = Instance.new("BodyGyro")
 gyro.Name = "FlyGyro"
 gyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
@@ -30,21 +30,26 @@ gyro.CFrame = hrp.CFrame
 gyro.Parent = hrp
 _G.FlyGyro = gyro
 
--- Fly movement in the character facing direction
+-- Flying speed
 local speed = 50
+
+-- Movement input (mobile-compatible)
 RunService.RenderStepped:Connect(function()
     if not _G.FlyEnabled then return end
 
-    local moveVector = Vector3.new()
+    local moveVector = Vector3.zero
     pcall(function()
         moveVector = require(player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule")):GetControls():GetMoveVector()
     end)
 
+    -- Re-map move direction properly
     if moveVector.Magnitude > 0 then
-        local forward = hrp.CFrame.LookVector
-        local right = hrp.CFrame.RightVector
-        local moveDir = (forward * moveVector.Z + right * moveVector.X).Unit
-        bv.Velocity = moveDir * speed
+        local cf = hrp.CFrame
+        local forward = cf.LookVector
+        local right = cf.RightVector
+        local direction = (forward * moveVector.Z + right * moveVector.X)
+
+        bv.Velocity = direction.Unit * speed
     else
         bv.Velocity = Vector3.zero
     end
