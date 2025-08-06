@@ -3,111 +3,49 @@ local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
-
-local flying = false
-local flyConnection = nil
-local movement = { Forward = 0, Right = 0 }
-
-local isMobile = UIS.TouchEnabled
-
--- Movement handler (desktop)
-local function onInput(input, gameProcessed)
-	if gameProcessed then return end
-	if input.KeyCode == Enum.KeyCode.W then movement.Forward = 1 end
-	if input.KeyCode == Enum.KeyCode.S then movement.Forward = -1 end
-	if input.KeyCode == Enum.KeyCode.A then movement.Right = -1 end
-	if input.KeyCode == Enum.KeyCode.D then movement.Right = 1 end
+-- fly.lua
+if _G.FlyEnabled then
+    _G.FlyEnabled = false
+    if _G.FlyConn then _G.FlyConn:Disconnect() end
+    if _G.BodyGyro then _G.BodyGyro:Destroy() end
+    if _G.BodyVel then _G.BodyVel:Destroy() end
+    game.Players.LocalPlayer.Character.Humanoid.PlatformStand = false
+    return
 end
 
-local function onInputEnded(input)
-	if input.KeyCode == Enum.KeyCode.W or input.KeyCode == Enum.KeyCode.S then
-		movement.Forward = 0
-	elseif input.KeyCode == Enum.KeyCode.A or input.KeyCode == Enum.KeyCode.D then
-		movement.Right = 0
-	end
-end
+_G.FlyEnabled = true
 
--- Start flying
-local function startFlying()
-	if flying then return end
-	flying = true
+local plr = game.Players.LocalPlayer
+local char = plr.Character or plr.CharacterAdded:Wait()
+local root = char:WaitForChild("HumanoidRootPart")
 
-	if not isMobile then
-		UIS.InputBegan:Connect(onInput)
-		UIS.InputEnded:Connect(onInputEnded)
-	end
+local BodyGyro = Instance.new("BodyGyro")
+BodyGyro.P = 9e4
+BodyGyro.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+BodyGyro.cframe = root.CFrame
+BodyGyro.Parent = root
+_G.BodyGyro = BodyGyro
 
-	flyConnection = RunService.RenderStepped:Connect(function()
-		character = player.Character or player.CharacterAdded:Wait()
-		hrp = character:WaitForChild("HumanoidRootPart")
+local BodyVel = Instance.new("BodyVelocity")
+BodyVel.velocity = Vector3.zero
+BodyVel.maxForce = Vector3.new(9e9, 9e9, 9e9)
+BodyVel.Parent = root
+_G.BodyVel = BodyVel
 
-		local camera = workspace.CurrentCamera
-		local moveVector = (camera.CFrame.lookVector * movement.Forward + camera.CFrame.RightVector * movement.Right)
-		hrp.Velocity = moveVector * 50
-	end)
-end
+local UIS = game:GetService("UserInputService")
+local cam = workspace.CurrentCamera
+local speed = 80
+local direction = Vector3.zero
 
--- Stop flying
-local function stopFlying()
-	flying = false
-	movement = { Forward = 0, Right = 0 }
+_G.FlyConn = game:GetService("RunService").RenderStepped:Connect(function()
+    if not _G.FlyEnabled then return end
+    direction = Vector3.zero
+    if UIS:IsKeyDown(Enum.KeyCode.W) then direction = direction + cam.CFrame.LookVector end
+    if UIS:IsKeyDown(Enum.KeyCode.S) then direction = direction - cam.CFrame.LookVector end
+    if UIS:IsKeyDown(Enum.KeyCode.A) then direction = direction - cam.CFrame.RightVector end
+    if UIS:IsKeyDown(Enum.KeyCode.D) then direction = direction + cam.CFrame.RightVector end
+    BodyVel.velocity = direction.Unit * speed
+    BodyGyro.CFrame = cam.CFrame
+    plr.Character.Humanoid.PlatformStand = true
+end)
 
-	if flyConnection then
-		flyConnection:Disconnect()
-		flyConnection = nil
-	end
-
-	if hrp then
-		hrp.Velocity = Vector3.zero
-	end
-end
-
--- Mobile Button UI
-local mobileButton
-local function createMobileButton()
-	if not isMobile then return end
-
-	local screenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-	screenGui.Name = "FlyButtonGUI"
-
-	mobileButton = Instance.new("TextButton", screenGui)
-	mobileButton.Size = UDim2.new(0, 100, 0, 40)
-	mobileButton.Position = UDim2.new(1, -110, 1, -100)
-	mobileButton.BackgroundColor3 = Color3.fromRGB(50, 150, 255)
-	mobileButton.Text = "🛫 Fly"
-	mobileButton.TextColor3 = Color3.new(1, 1, 1)
-	mobileButton.TextSize = 18
-	mobileButton.Font = Enum.Font.SourceSansBold
-
-	mobileButton.MouseButton1Click:Connect(function()
-		if flying then
-			stopFlying()
-			mobileButton.Text = "🛫 Fly"
-		else
-			startFlying()
-			mobileButton.Text = "🛑 Stop"
-		end
-	end)
-end
-
--- Public API
-local module = {}
-
-function module.Enable()
-	startFlying()
-	if isMobile and not mobileButton then
-		createMobileButton()
-	end
-end
-
-function module.Disable()
-	stopFlying()
-	if mobileButton then
-		mobileButton.Text = "🛫 Fly"
-	end
-end
-
-return module
