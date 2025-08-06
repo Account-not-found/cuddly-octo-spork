@@ -2,14 +2,17 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 
-local noclip = true
+-- noclip.lua
+if _G.NoclipConn then
+    _G.NoclipConn:Disconnect()
+    _G.NoclipConn = nil
+    return
+end
 
-RunService.Stepped:Connect(function()
-    if noclip and player.Character then
-        for _, v in pairs(player.Character:GetDescendants()) do
-            if v:IsA("BasePart") and v.CanCollide then
-                v.CanCollide = false
-            end
+_G.NoclipConn = game:GetService("RunService").Stepped:Connect(function()
+    for _, part in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+        if part:IsA("BasePart") and part.CanCollide == true then
+            part.CanCollide = false
         end
     end
 end)
