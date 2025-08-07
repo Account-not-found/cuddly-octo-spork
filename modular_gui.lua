@@ -1,128 +1,96 @@
--- modular_gui.lua
+-- modular_gui.lua (Upgraded UI)
 local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
-local StarterGui = game:GetService("StarterGui")
-
-local player = Players.LocalPlayer
-local PlayerGui = player:WaitForChild("PlayerGui")
-
--- Blurred loader UI
-local blur = Instance.new("BlurEffect", game:GetService("Lighting"))
-blur.Size = 0
-
--- Create loader GUI
-local loaderGui = Instance.new("ScreenGui", PlayerGui)
-loaderGui.Name = "LoaderUI"
-loaderGui.IgnoreGuiInset = true
-loaderGui.ResetOnSpawn = false
-
-local loaderFrame = Instance.new("Frame", loaderGui)
-loaderFrame.Size = UDim2.new(0, 400, 0, 200)
-loaderFrame.Position = UDim2.new(0.5, -200, 0.5, -100)
-loaderFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-loaderFrame.BorderSizePixel = 0
-loaderFrame.BackgroundTransparency = 1
-loaderFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-
-local UICorner = Instance.new("UICorner", loaderFrame)
-UICorner.CornerRadius = UDim.new(0, 12)
-
-local title = Instance.new("TextLabel", loaderFrame)
-title.Size = UDim2.new(1, 0, 0, 50)
-title.Position = UDim2.new(0, 0, 0, 20)
-title.Text = "☄️ Welcome to the Script Hub"
-title.TextColor3 = Color3.new(1, 1, 1)
-title.Font = Enum.Font.GothamBold
-title.TextSize = 24
-title.BackgroundTransparency = 1
-
-local loadingText = Instance.new("TextLabel", loaderFrame)
-loadingText.Size = UDim2.new(1, 0, 0, 30)
-loadingText.Position = UDim2.new(0, 0, 0, 90)
-loadingText.Text = "Loading modules..."
-loadingText.TextColor3 = Color3.new(1, 1, 1)
-loadingText.Font = Enum.Font.Gotham
-loadingText.TextSize = 20
-loadingText.BackgroundTransparency = 1
-
--- Animate blur
-TweenService:Create(blur, TweenInfo.new(1), {Size = 15}):Play()
-TweenService:Create(loaderFrame, TweenInfo.new(1), {BackgroundTransparency = 0}):Play()
-
-wait(2) -- Fake loading delay
-
--- Clean up loader
-TweenService:Create(loaderFrame, TweenInfo.new(1), {BackgroundTransparency = 1}):Play()
-TweenService:Create(blur, TweenInfo.new(1), {Size = 0}):Play()
-wait(1)
-loaderGui:Destroy()
-blur:Destroy()
-
--- ✅ SCRIPT HUB STARTS HERE
-
 local UIS = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
+local TweenService = game:GetService("TweenService")
+local player = Players.LocalPlayer
 
-local function createButton(parent, text, callback)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -20, 0, 30)
-    btn.Position = UDim2.new(0, 10, 0, 0)
-    btn.Text = text
-    btn.Font = Enum.Font.SourceSansBold
-    btn.TextSize = 18
-    btn.TextColor3 = Color3.new(1, 1, 1)
-    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    btn.BorderSizePixel = 0
-    btn.AutoButtonColor = true
-    btn.Parent = parent
-
-    btn.MouseButton1Click:Connect(callback)
-    return btn
-end
-
--- Main GUI
-local ScreenGui = Instance.new("ScreenGui", PlayerGui)
+-- GUI Creation
+local ScreenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
 ScreenGui.Name = "ModularGUI"
+ScreenGui.ResetOnSpawn = false
+
+local ToggleButton = Instance.new("TextButton", ScreenGui)
+ToggleButton.Size = UDim2.new(0, 100, 0, 40)
+ToggleButton.Position = UDim2.new(0, 10, 0.5, -20)
+ToggleButton.Text = "☰ Menu"
+ToggleButton.Font = Enum.Font.GothamBold
+ToggleButton.TextSize = 18
+ToggleButton.TextColor3 = Color3.new(1, 1, 1)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+ToggleButton.BorderSizePixel = 0
+ToggleButton.ZIndex = 2
 
 local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 400, 0, 300)
-Frame.Position = UDim2.new(0.5, -200, 0.5, -150)
-Frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+Frame.Size = UDim2.new(0, 400, 0, 350)
+Frame.Position = UDim2.new(0.5, -200, 0.5, -175)
+Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 Frame.BorderSizePixel = 0
+Frame.Visible = true
 Frame.Active = true
 Frame.Draggable = true
 
-local UICornerMain = Instance.new("UICorner", Frame)
-UICornerMain.CornerRadius = UDim.new(0, 12)
+local Accent = Instance.new("Frame", Frame)
+Accent.Size = UDim2.new(1, 0, 0, 4)
+Accent.Position = UDim2.new(0, 0, 0, 0)
+Accent.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+Accent.BorderSizePixel = 0
 
 local Title = Instance.new("TextLabel", Frame)
 Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Position = UDim2.new(0, 0, 0, 4)
 Title.BackgroundTransparency = 1
-Title.Text = "✅ Script Hub"
+Title.Text = "🔧 Script Hub"
 Title.TextColor3 = Color3.new(1, 1, 1)
-Title.Font = Enum.Font.SourceSansBold
+Title.Font = Enum.Font.GothamBold
 Title.TextSize = 22
 
-local ButtonContainer = Instance.new("Frame", Frame)
-ButtonContainer.Size = UDim2.new(1, 0, 1, -50)
-ButtonContainer.Position = UDim2.new(0, 0, 0, 45)
+local SearchBar = Instance.new("TextBox", Frame)
+SearchBar.PlaceholderText = "🔍 Search modules..."
+SearchBar.Size = UDim2.new(1, -20, 0, 30)
+SearchBar.Position = UDim2.new(0, 10, 0, 50)
+SearchBar.Text = ""
+SearchBar.Font = Enum.Font.SourceSans
+SearchBar.TextSize = 16
+SearchBar.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+SearchBar.TextColor3 = Color3.new(1, 1, 1)
+SearchBar.BorderSizePixel = 0
+
+local ButtonContainer = Instance.new("ScrollingFrame", Frame)
+ButtonContainer.Size = UDim2.new(1, -20, 1, -100)
+ButtonContainer.Position = UDim2.new(0, 10, 0, 90)
 ButtonContainer.BackgroundTransparency = 1
+ButtonContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
+ButtonContainer.ScrollBarThickness = 6
 
 local Layout = Instance.new("UIListLayout", ButtonContainer)
 Layout.Padding = UDim.new(0, 6)
 Layout.SortOrder = Enum.SortOrder.LayoutOrder
 
--- Modules
-local Modules = {
-    {name = "🔍 Enable ESP", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/esp.lua"},
-    {name = "🚀 Enable Fly", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/fly.lua"},
-    {name = "🕳️ Enable Noclip", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/noclip.lua"},
-    {name = "🔄 Rejoin", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/rejoin.lua"},
-    {name = "🚪 Server Hop", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/serverhop.lua"},
-    {name = "💤 Anti-AFK", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/antiafk.lua"},
-}
+-- Click sound
+local Sound = Instance.new("Sound", ScreenGui)
+Sound.SoundId = "rbxassetid://9118823101"
+Sound.Volume = 1
 
-for _, mod in ipairs(Modules) do
-    createButton(ButtonContainer, mod.name, function()
+local function playSound()
+    if Sound.IsLoaded then Sound:Play() end
+end
+
+-- Create button
+local function createButton(mod)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 0, 36)
+    btn.Text = mod.name
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 16
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    btn.BorderSizePixel = 0
+    btn.AutoButtonColor = true
+    btn.Parent = ButtonContainer
+
+    btn.MouseButton1Click:Connect(function()
+        playSound()
         local s, err = pcall(function()
             loadstring(game:HttpGet(mod.url))()
         end)
@@ -131,3 +99,42 @@ for _, mod in ipairs(Modules) do
         end
     end)
 end
+
+-- Modules
+local Modules = {
+    {name = "🔍 ESP", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/esp.lua"},
+    {name = "🚀 Fly", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/fly.lua"},
+    {name = "🕳️ Noclip", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/noclip.lua"},
+    {name = "🔄 Rejoin", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/rejoin.lua"},
+    {name = "🚪 Server Hop", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/serverhop.lua"},
+    {name = "💤 Anti-AFK", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/antiafk.lua"},
+}
+
+-- Button filtering
+local function refreshButtons(filter)
+    for _, child in ipairs(ButtonContainer:GetChildren()) do
+        if child:IsA("TextButton") then child:Destroy() end
+    end
+    for _, mod in ipairs(Modules) do
+        if filter == "" or string.find(mod.name:lower(), filter:lower()) then
+            createButton(mod)
+        end
+    end
+    task.wait()
+    ButtonContainer.CanvasSize = UDim2.new(0, 0, 0, Layout.AbsoluteContentSize.Y + 10)
+end
+
+SearchBar:GetPropertyChangedSignal("Text"):Connect(function()
+    refreshButtons(SearchBar.Text)
+end)
+
+-- Toggle open/close
+local visible = true
+ToggleButton.MouseButton1Click:Connect(function()
+    visible = not visible
+    Frame.Visible = visible
+    playSound()
+end)
+
+-- Initialize
+refreshButtons("")
