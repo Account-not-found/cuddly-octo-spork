@@ -1,124 +1,101 @@
--- modular_gui.lua (Advanced Version)
-
+-- modular_gui.lua
 local Players = game:GetService("Players")
-local HttpService = game:GetService("HttpService")
-local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
+local PlayerGui = player:WaitForChild("PlayerGui")
 
-local MODULES = {
-    { name = "🔍 ESP", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/esp.lua", key = "ESP" },
-    { name = "🚀 Fly", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/fly.lua", key = "Fly" },
-    { name = "🕳️ Noclip", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/noclip.lua", key = "Noclip" },
-    { name = "🔄 Rejoin", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/rejoin.lua", key = "Rejoin" },
-    { name = "🚪 Server Hop", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/serverhop.lua", key = "Serverhop" },
-    { name = "💤 Anti-AFK", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/antiafk.lua", key = "AntiAFK" },
-}
+if PlayerGui:FindFirstChild("ModularGUI") then
+    PlayerGui:FindFirstChild("ModularGUI"):Destroy()
+end
 
-local Config = { Theme = "Dark", Toggles = {} }
-local ConfigFile = "modular_gui_config.json"
-
--- Read config if available
-pcall(function()
-    if isfile(ConfigFile) then
-        local saved = HttpService:JSONDecode(readfile(ConfigFile))
-        if saved then Config = saved end
-    end
-end)
-
--- GUI Setup
-local ScreenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-ScreenGui.Name = "ModularScriptHub"
-ScreenGui.ResetOnSpawn = false
+local gui = Instance.new("ScreenGui", PlayerGui)
+gui.Name = "ModularGUI"
+gui.ResetOnSpawn = false
 
 -- Toggle Button
-local ToggleButton = Instance.new("TextButton")
-ToggleButton.Name = "ToggleButton"
-ToggleButton.Size = UDim2.new(0, 140, 0, 40)
-ToggleButton.Position = UDim2.new(0, 10, 0.5, -20)
-ToggleButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-ToggleButton.TextColor3 = Color3.new(1, 1, 1)
-ToggleButton.Font = Enum.Font.GothamBold
-ToggleButton.TextSize = 14
-ToggleButton.Text = "📂 Open Script Hub"
-ToggleButton.Draggable = true
-ToggleButton.Active = true
-ToggleButton.Parent = ScreenGui
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0, 100, 0, 35)
+toggleButton.Position = UDim2.new(0, 10, 0.5, -17)
+toggleButton.Text = "☰ Hub"
+toggleButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+toggleButton.TextColor3 = Color3.new(1, 1, 1)
+toggleButton.TextSize = 18
+toggleButton.Parent = gui
+toggleButton.ZIndex = 2
 
 -- Main Frame
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 460, 0, 360)
-MainFrame.Position = UDim2.new(0.5, -230, 0.5, -180)
-MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-MainFrame.BorderSizePixel = 0
-MainFrame.Visible = false
-MainFrame.Parent = ScreenGui
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 400, 0, 300)
+frame.Position = UDim2.new(0.5, -200, 0.5, -150)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.Visible = true
+frame.Active = true
+frame.Draggable = true
+frame.Parent = gui
 
--- Title Bar
-local Title = Instance.new("TextLabel", MainFrame)
-Title.Size = UDim2.new(1, 0, 0, 40)
-Title.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-Title.Text = "💻 Advanced Script Hub"
-Title.Font = Enum.Font.GothamBold
-Title.TextColor3 = Color3.new(1, 1, 1)
-Title.TextSize = 18
+-- Title
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1, 0, 0, 40)
+title.Text = "🧠 Script Hub"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.TextSize = 22
+title.Font = Enum.Font.SourceSansBold
+title.BackgroundTransparency = 1
 
 -- Button Container
-local ButtonHolder = Instance.new("Frame", MainFrame)
-ButtonHolder.Size = UDim2.new(1, -20, 1, -60)
-ButtonHolder.Position = UDim2.new(0, 10, 0, 50)
-ButtonHolder.BackgroundTransparency = 1
+local container = Instance.new("Frame", frame)
+container.Size = UDim2.new(1, -20, 1, -50)
+container.Position = UDim2.new(0, 10, 0, 45)
+container.BackgroundTransparency = 1
 
-local Layout = Instance.new("UIListLayout", ButtonHolder)
-Layout.Padding = UDim.new(0, 8)
-Layout.SortOrder = Enum.SortOrder.LayoutOrder
+local layout = Instance.new("UIListLayout", container)
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+layout.Padding = UDim.new(0, 6)
 
--- Save config
-local function saveConfig()
-    pcall(function()
-        writefile(ConfigFile, HttpService:JSONEncode(Config))
+-- Toggle handler
+toggleButton.MouseButton1Click:Connect(function()
+    frame.Visible = not frame.Visible
+end)
+
+-- Module URLs
+local modules = {
+    {name = "🔍 ESP", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/esp.lua"},
+    {name = "🚀 Fly", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/fly.lua"},
+    {name = "🕳️ Noclip", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/noclip.lua"},
+    {name = "🔄 Rejoin", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/rejoin.lua"},
+    {name = "🚪 Server Hop", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/serverhop.lua"},
+    {name = "💤 Anti-AFK", url = "https://raw.githubusercontent.com/Account-not-found/cuddly-octo-spork/refs/heads/modules/antiafk.lua"},
+}
+
+local loaded = {}
+
+for _, mod in ipairs(modules) do
+    local button = Instance.new("TextButton", container)
+    button.Size = UDim2.new(1, 0, 0, 30)
+    button.Text = mod.name
+    button.TextSize = 18
+    button.TextColor3 = Color3.new(1, 1, 1)
+    button.Font = Enum.Font.SourceSans
+    button.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
+
+    button.MouseButton1Click:Connect(function()
+        if loaded[mod.name] then
+            loaded[mod.name] = false
+            if _G.ModuleFlags then _G.ModuleFlags[mod.name] = false end
+            button.Text = mod.name
+            return
+        end
+
+        local success, err = pcall(function()
+            loadstring(game:HttpGet(mod.url))()
+        end)
+
+        if success then
+            loaded[mod.name] = true
+            if not _G.ModuleFlags then _G.ModuleFlags = {} end
+            _G.ModuleFlags[mod.name] = true
+            button.Text = "✅ " .. mod.name
+        else
+            warn("Failed to load " .. mod.name .. ": " .. tostring(err))
+        end
     end)
 end
-
--- Create toggle buttons
-for _, module in ipairs(MODULES) do
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(1, 0, 0, 36)
-    button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    button.TextColor3 = Color3.new(1, 1, 1)
-    button.Font = Enum.Font.Gotham
-    button.TextSize = 14
-    button.Text = module.name
-    button.Name = module.key
-    button.AutoButtonColor = true
-    button.Parent = ButtonHolder
-
-    local function toggleModule()
-        local state = not Config.Toggles[module.key]
-        Config.Toggles[module.key] = state
-        saveConfig()
-
-        button.BackgroundColor3 = state and Color3.fromRGB(70, 110, 70) or Color3.fromRGB(50, 50, 50)
-        if state then
-            local success, err = pcall(function()
-                loadstring(game:HttpGet(module.url))()
-            end)
-            if not success then
-                warn("Error loading module " .. module.name .. ": " .. err)
-            end
-        end
-    end
-
-    button.MouseButton1Click:Connect(toggleModule)
-
-    -- Restore saved toggle state
-    if Config.Toggles[module.key] then
-        toggleModule()
-    end
-end
-
--- Open/Close behavior
-ToggleButton.MouseButton1Click:Connect(function()
-    MainFrame.Visible = not MainFrame.Visible
-    ToggleButton.Text = MainFrame.Visible and "❌ Close Script Hub" or "📂 Open Script Hub"
-end)
