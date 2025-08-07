@@ -1,89 +1,66 @@
--- fly.lua (Shift-lock style + mobile friendly + all direction)
-if _G.FlyingEnabled then
-    _G.FlyingEnabled = false
-    if _G.FlyConnection then _G.FlyConnection:Disconnect() end
-    if _G.FlyHeartbeat then _G.FlyHeartbeat:Disconnect() end
-    if _G.BodyGyro then _G.BodyGyro:Destroy() end
-    if _G.BodyVelocity then _G.BodyVelocity:Destroy() end
+-- fly.lua (mobile + shift lock + fixed)
+if _G.FlyActive then
+    _G.FlyActive = false
+    if _G.FlyBodyGyro then _G.FlyBodyGyro:Destroy() end
+    if _G.FlyBodyVelocity then _G.FlyBodyVelocity:Destroy() end
     return
 end
 
-_G.FlyingEnabled = true
+_G.FlyActive = true
 
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UIS = game:GetService("UserInputService")
-
-local player = Players.LocalPlayer
+local player = game.Players.LocalPlayer
 local char = player.Character or player.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
 
-local camera = workspace.CurrentCamera
+local uis = game:GetService("UserInputService")
+local rs = game:GetService("RunService")
 
-local flyingSpeed = 60
-local bodyGyro = Instance.new("BodyGyro")
-bodyGyro.MaxTorque = Vector3.new(1e9, 1e9, 1e9)
-bodyGyro.P = 1e5
-bodyGyro.CFrame = hrp.CFrame
-bodyGyro.Parent = hrp
-_G.BodyGyro = bodyGyro
+local speed = 60
+local direction = Vector3.zero
+local flying = true
 
-local bodyVelocity = Instance.new("BodyVelocity")
-bodyVelocity.MaxForce = Vector3.new(1e9, 1e9, 1e9)
-bodyVelocity.Velocity = Vector3.zero
-bodyVelocity.Parent = hrp
-_G.BodyVelocity = bodyVelocity
+local bv = Instance.new("BodyVelocity")
+bv.Velocity = Vector3.zero
+bv.MaxForce = Vector3.new(1, 1, 1) * 1e5
+bv.P = 1250
+bv.Name = "FlyBodyVelocity"
+bv.Parent = hrp
 
-local moveDirection = Vector3.zero
+local bg = Instance.new("BodyGyro")
+bg.MaxTorque = Vector3.new(1, 1, 1) * 1e5
+bg.P = 3000
+bg.CFrame = hrp.CFrame
+bg.Name = "FlyBodyGyro"
+bg.Parent = hrp
 
--- Mobile or PC control support
-local keys = {
-    W = false, A = false, S = false, D = false,
-    Space = false, Shift = false
-}
+_G.FlyBodyGyro = bg
+_G.FlyBodyVelocity = bv
 
-local function updateDirection()
-    local camCF = camera.CFrame
-    local forward = camCF.LookVector
-    local right = camCF.RightVector
-    local up = Vector3.new(0, 1, 0)
-
-    local moveVec = Vector3.zero
-    if keys.W then moveVec += forward end
-    if keys.S then moveVec -= forward end
-    if keys.A then moveVec -= right end
-    if keys.D then moveVec += right end
-    if keys.Space then moveVec += up end
-    if keys.Shift then moveVec -= up end
-
-    moveDirection = moveVec.Unit * flyingSpeed
-end
-
-_G.FlyConnection = UIS.InputBegan:Connect(function(input, gpe)
-    if gpe then return end
-    local k = input.KeyCode.Name
-    if keys[k] ~= nil then
-        keys[k] = true
-        updateDirection()
+uis.InputBegan:Connect(function(input)
+    if not flying then return end
+    if input.UserInputType == Enum.UserInputType.Keyboard then
+        if input.KeyCode == Enum.KeyCode.W then direction = Vector3.new(0, 0, -1)
+        elseif input.KeyCode == Enum.KeyCode.S then direction = Vector3.new(0, 0, 1)
+        elseif input.KeyCode == Enum.KeyCode.A then direction = Vector3.new(-1, 0, 0)
+        elseif input.KeyCode == Enum.KeyCode.D then direction = Vector3.new(1, 0, 0)
+        elseif input.KeyCode == Enum.KeyCode.Space then direction = Vector3.new(0, 1, 0)
+        elseif input.KeyCode == Enum.KeyCode.LeftControl then direction = Vector3.new(0, -1, 0) end
     end
 end)
 
-_G.FlyHeartbeat = UIS.InputEnded:Connect(function(input, gpe)
-    if gpe then return end
-    local k = input.KeyCode.Name
-    if keys[k] ~= nil then
-        keys[k] = false
-        updateDirection()
+uis.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Keyboard then
+        direction = Vector3.zero
     end
 end)
 
-RunService.RenderStepped:Connect(function()
-    if not _G.FlyingEnabled then return end
-
-    if moveDirection.Magnitude > 0 then
-        bodyVelocity.Velocity = moveDirection
-        bodyGyro.CFrame = CFrame.new(hrp.Position, hrp.Position + moveDirection)
-    else
-        bodyVelocity.Velocity = Vector3.zero
+rs:BindToRenderStep("FlyUpdate", Enum.RenderPriority.Input.Value, function()
+    if not _G.FlyActive or not char or not hrp then
+        rs:UnbindFromRenderStep("FlyUpdate")
+        return
     end
+    local cf = workspace.CurrentCamera.CFrame
+    local moveDir = cf:VectorToWorldSpace(direction)
+    bv.Velocity = moveDir.Unit * speed
+    bg.CFrame = CFrame.new(hrp.Position, hrp.Position + cf.LookVector)
 end)
